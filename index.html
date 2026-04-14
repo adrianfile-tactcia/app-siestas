@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App Siestas</title>
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#1f4e8c" />
+  <meta name="theme-color" content="#214f86" />
   <style>
     :root {
       --blue-dark: #214f86;
@@ -19,6 +19,7 @@
     }
 
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
@@ -27,7 +28,7 @@
     }
 
     .app {
-      max-width: 900px;
+      max-width: 1400px;
       margin: 0 auto;
       padding: 14px;
     }
@@ -106,7 +107,7 @@
       border-radius: 16px;
       overflow: hidden;
       box-shadow: 0 6px 18px rgba(0,0,0,.06);
-      min-height: 290px;
+      min-height: 280px;
       display: flex;
       flex-direction: column;
     }
@@ -124,6 +125,7 @@
       padding: 8px;
       font-weight: bold;
       border-bottom: 1px solid #c7dbe7;
+      font-size: 16px;
     }
 
     .day-head.today {
@@ -155,17 +157,6 @@
       font-size: 15px;
     }
 
-    .slot input {
-      width: 100%;
-      border: 1px solid #d8e0e8;
-      padding: 9px 10px;
-      outline: none;
-      font-size: 15px;
-      background: white;
-      color: var(--text);
-      border-radius: 10px;
-    }
-
     .time-group {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -185,6 +176,17 @@
       color: var(--muted);
       font-weight: bold;
       padding-left: 2px;
+    }
+
+    .slot input {
+      width: 100%;
+      border: 1px solid #d8e0e8;
+      padding: 9px 10px;
+      outline: none;
+      font-size: 15px;
+      background: white;
+      color: var(--text);
+      border-radius: 10px;
     }
 
     .slot.manana .slot-label,
@@ -216,6 +218,7 @@
       color: #b42318;
       padding: 0 10px 8px 10px;
       font-weight: bold;
+      display: none;
     }
 
     .footer {
@@ -237,15 +240,19 @@
       .calendar {
         grid-template-columns: 1fr;
       }
+
       .weekday {
         display: none;
       }
+
       .day-card {
         min-height: auto;
       }
+
       .topbar h1 {
         font-size: 22px;
       }
+
       .slot {
         grid-template-columns: 105px 1fr;
       }
@@ -257,8 +264,8 @@
     <div class="topbar">
       <button class="nav-btn" id="prevMonth">◀</button>
       <div>
-        <h1 id="monthTitle">Abril 2026</h1>
-        <p>APP CON FIREBASE ACTIVA</p>
+        <h1 id="monthTitle">Mes</h1>
+        <p>Agenda compartida de siestas</p>
       </div>
       <button class="nav-btn" id="nextMonth">▶</button>
     </div>
@@ -268,46 +275,30 @@
       <button class="action-btn" id="clearMonthBtn">Limpiar este mes</button>
     </div>
 
-    <div class="calendar" id="calendar">
-      <div class="weekday">Lunes</div>
-      <div class="weekday">Martes</div>
-      <div class="weekday">Miércoles</div>
-      <div class="weekday">Jueves</div>
-      <div class="weekday">Viernes</div>
-      <div class="weekday">Sábado</div>
-      <div class="weekday">Domingo</div>
-    </div>
+    <div class="calendar" id="calendar"></div>
 
     <div class="footer">
-      Los horarios se guardan solos en el celular o la compu.
+      Los horarios se guardan y se comparten entre dispositivos.
       <div class="install-tip">En Android: menú del navegador → Instalar app. En iPhone: Compartir → Añadir a pantalla de inicio.</div>
     </div>
   </div>
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-    import {
-      getFirestore,
-      doc,
-      getDoc,
-      setDoc,
-      onSnapshot
-    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+    import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
     const firebaseConfig = {
-  apiKey: "AIzaSyDDrGbgL17i2KX5W3e0iNilTzWUrIsvgHA",
-  authDomain: "app-web-ffea0.firebaseapp.com",
-  projectId: "app-web-ffea0",
-  storageBucket: "app-web-ffea0.firebasestorage.app",
-  messagingSenderId: "1021596773214",
-  appId: "1:1021596773214:web:670dab0a531461775abd6f"
-};
-
-
-    const SHARE_ID = 'agenda-compartida';
+      apiKey: "AIzaSyDDrGbgL17i2KX5W3e0iNilTzWUrIsvgHA",
+      authDomain: "app-web-ffea0.firebaseapp.com",
+      projectId: "app-web-ffea0",
+      storageBucket: "app-web-ffea0.firebasestorage.app",
+      messagingSenderId: "1021596773214",
+      appId: "1:1021596773214:web:670dab0a531461775abd6f"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const SHARE_ID = 'agenda-compartida';
 
     const monthNames = [
       'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -323,9 +314,8 @@
     const calendarEl = document.getElementById('calendar');
     const monthTitleEl = document.getElementById('monthTitle');
 
-    let currentDate = new Date();
-    let currentYear = currentDate.getFullYear();
-    let currentMonth = currentDate.getMonth();
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
     let monthData = {};
     let unsubscribeMonth = null;
 
@@ -343,11 +333,14 @@
 
     async function saveValue(day, suffix, value) {
       const ref = doc(db, 'shared_calendars', SHARE_ID, 'months', monthId(currentYear, currentMonth));
-      monthData[fieldKey(day, suffix)] = value;
+      const nextValues = {
+        ...monthData,
+        [fieldKey(day, suffix)]: value
+      };
+      monthData = nextValues;
+
       await setDoc(ref, {
-        values: {
-          ...monthData
-        },
+        values: nextValues,
         updatedAt: Date.now()
       }, { merge: true });
     }
@@ -365,6 +358,7 @@
       }
 
       monthData = empty;
+
       await setDoc(ref, {
         values: empty,
         updatedAt: Date.now()
@@ -463,7 +457,6 @@
         row.appendChild(validation);
 
         rows.appendChild(row);
-
         validateTimes();
       });
 
@@ -502,8 +495,12 @@
       if (unsubscribeMonth) unsubscribeMonth();
 
       const ref = doc(db, 'shared_calendars', SHARE_ID, 'months', monthId(currentYear, currentMonth));
+
       unsubscribeMonth = onSnapshot(ref, (snap) => {
         monthData = snap.exists() ? (snap.data().values || {}) : {};
+        renderCalendar();
+      }, () => {
+        monthData = {};
         renderCalendar();
       });
     }
@@ -543,4 +540,3 @@
   </script>
 </body>
 </html>
-
