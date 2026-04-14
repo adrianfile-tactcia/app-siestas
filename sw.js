@@ -1,5 +1,4 @@
-const CACHE = 'app-siestas-v1';
-
+const CACHE = 'app-siestas-v2';
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE).then((cache) => {
