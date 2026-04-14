@@ -138,7 +138,7 @@
 
     .slot {
       display: grid;
-      grid-template-columns: 92px 1fr;
+      grid-template-columns: 120px 1fr;
       border-bottom: 1px solid var(--line);
       min-height: 38px;
     }
@@ -157,12 +157,65 @@
 
     .slot input {
       width: 100%;
-      border: 0;
+      border: 1px solid #d8e0e8;
       padding: 9px 10px;
       outline: none;
       font-size: 15px;
       background: white;
       color: var(--text);
+      border-radius: 10px;
+    }
+
+    .time-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 6px 8px;
+      align-items: end;
+    }
+
+    .time-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .time-field small {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: bold;
+      padding-left: 2px;
+    }
+
+    .slot.manana .slot-label,
+    .slot.manana .time-group {
+      background: #fff8e8;
+    }
+
+    .slot.siesta .slot-label,
+    .slot.siesta .time-group {
+      background: #eef8ee;
+    }
+
+    .slot.noche .slot-label,
+    .slot.noche .time-group {
+      background: #eef2fb;
+    }
+
+    .slot.invalid .time-group {
+      background: #fff0f0;
+    }
+
+    .slot.invalid input {
+      border-color: #d66;
+    }
+
+    .validation-msg {
+      grid-column: 1 / -1;
+      font-size: 11px;
+      color: #b42318;
+      padding: 0 10px 8px 10px;
+      font-weight: bold;
     }
 
     .footer {
@@ -194,7 +247,7 @@
         font-size: 22px;
       }
       .slot {
-        grid-template-columns: 98px 1fr;
+        grid-template-columns: 105px 1fr;
       }
     }
   </style>
@@ -262,7 +315,11 @@
       for (let day = 1; day <= daysInMonth; day++) {
         for (const slot of slots) {
           localStorage.removeItem(storageKey(year, month, day, slot));
+          localStorage.removeItem(storageKey(year, month, day, slot + '_inicio'));
+          localStorage.removeItem(storageKey(year, month, day, slot + '_fin'));
         }
+      }
+    }
       }
     }
 
@@ -291,36 +348,70 @@
 
       slots.forEach((slot) => {
         const row = document.createElement('div');
-        row.className = 'slot';
+        const slotClass = slot === 'Mañana' ? 'manana' : (slot === 'Noche' ? 'noche' : 'siesta');
+        row.className = 'slot ' + slotClass;
 
         const label = document.createElement('div');
         label.className = 'slot-label';
         label.textContent = slot;
 
         const container = document.createElement('div');
-        container.style.display = 'flex';
-        container.style.gap = '6px';
+        container.className = 'time-group';
 
+        const startWrap = document.createElement('div');
+        startWrap.className = 'time-field';
+        const startLabel = document.createElement('small');
+        startLabel.textContent = 'Inicio';
         const inputStart = document.createElement('input');
         inputStart.type = 'time';
         inputStart.value = loadValue(year, month, day, slot + '_inicio');
-        inputStart.addEventListener('input', (e) => {
-          saveValue(year, month, day, slot + '_inicio', e.target.value);
-        });
 
+        const endWrap = document.createElement('div');
+        endWrap.className = 'time-field';
+        const endLabel = document.createElement('small');
+        endLabel.textContent = 'Fin';
         const inputEnd = document.createElement('input');
         inputEnd.type = 'time';
         inputEnd.value = loadValue(year, month, day, slot + '_fin');
-        inputEnd.addEventListener('input', (e) => {
-          saveValue(year, month, day, slot + '_fin', e.target.value);
+
+        const validation = document.createElement('div');
+        validation.className = 'validation-msg';
+        validation.style.display = 'none';
+        validation.textContent = 'La hora de fin no puede ser anterior a la de inicio';
+
+        function validateTimes() {
+          const start = inputStart.value;
+          const end = inputEnd.value;
+          const invalid = start && end && end < start;
+          row.classList.toggle('invalid', invalid);
+          validation.style.display = invalid ? 'block' : 'none';
+          return !invalid;
+        }
+
+        inputStart.addEventListener('input', (e) => {
+          saveValue(year, month, day, slot + '_inicio', e.target.value);
+          validateTimes();
         });
 
-        container.appendChild(inputStart);
-        container.appendChild(inputEnd);
+        inputEnd.addEventListener('input', (e) => {
+          saveValue(year, month, day, slot + '_fin', e.target.value);
+          validateTimes();
+        });
+
+        startWrap.appendChild(startLabel);
+        startWrap.appendChild(inputStart);
+        endWrap.appendChild(endLabel);
+        endWrap.appendChild(inputEnd);
+
+        container.appendChild(startWrap);
+        container.appendChild(endWrap);
 
         row.appendChild(label);
         row.appendChild(container);
+        row.appendChild(validation);
         rows.appendChild(row);
+
+        validateTimes();
       });
 
       card.appendChild(rows);
