@@ -465,8 +465,9 @@
     });
 
     document.getElementById('todayBtn').addEventListener('click', () => {
-      currentYear = today.getFullYear();
-      currentMonth = today.getMonth();
+      const now = new Date();
+      currentYear = now.getFullYear();
+      currentMonth = now.getMonth();
       renderCalendar();
     });
 
