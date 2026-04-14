@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Siestas</title>
+<link rel="manifest" href="manifest.json">
+<style>
+body { font-family: Arial; background:#f1f5f9; margin:0; }
+.header { background:#1e3a8a; color:white; padding:15px; text-align:center; }
+.card { background:white; margin:10px; padding:10px; border-radius:10px; }
+input { width:100%; padding:5px; margin-top:3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+<h2>Abril 2026</h2>
+</div>
+
+<div id="app"></div>
+
+<script>
+const days = [13,14,15,16,17,18,19];
+
+function save(key, value){
+ localStorage.setItem(key, value);
+}
+
+function load(key){
+ return localStorage.getItem(key) || "";
+}
+
+const app = document.getElementById("app");
+
+days.forEach(day=>{
+ let div = document.createElement("div");
+ div.className = "card";
+
+ div.innerHTML = `
+ <h3>Día ${day}</h3>
+ Mañana <input value="${load('m_'+day)}" onchange="save('m_${day}', this.value)">
+ Siesta 2 <input value="${load('s2_'+day)}" onchange="save('s2_${day}', this.value)">
+ Siesta 3 <input value="${load('s3_'+day)}" onchange="save('s3_${day}', this.value)">
+ Siesta 4 <input value="${load('s4_'+day)}" onchange="save('s4_${day}', this.value)">
+ Noche <input value="${load('n_'+day)}" onchange="save('n_${day}', this.value)">
+ `;
+
+ app.appendChild(div);
+});
+</script>
+
+</body>
+</html>
