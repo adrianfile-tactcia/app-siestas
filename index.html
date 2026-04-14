@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App Siestas</title>
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#214f86" />
+  <meta name="theme-color" content="#1f4e8c" />
   <style>
     :root {
       --blue-dark: #214f86;
@@ -19,7 +19,6 @@
     }
 
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
@@ -28,7 +27,7 @@
     }
 
     .app {
-      max-width: 1400px;
+      max-width: 900px;
       margin: 0 auto;
       padding: 14px;
     }
@@ -107,7 +106,7 @@
       border-radius: 16px;
       overflow: hidden;
       box-shadow: 0 6px 18px rgba(0,0,0,.06);
-      min-height: 280px;
+      min-height: 290px;
       display: flex;
       flex-direction: column;
     }
@@ -125,7 +124,6 @@
       padding: 8px;
       font-weight: bold;
       border-bottom: 1px solid #c7dbe7;
-      font-size: 16px;
     }
 
     .day-head.today {
@@ -157,6 +155,17 @@
       font-size: 15px;
     }
 
+    .slot input {
+      width: 100%;
+      border: 1px solid #d8e0e8;
+      padding: 9px 10px;
+      outline: none;
+      font-size: 15px;
+      background: white;
+      color: var(--text);
+      border-radius: 10px;
+    }
+
     .time-group {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -176,17 +185,6 @@
       color: var(--muted);
       font-weight: bold;
       padding-left: 2px;
-    }
-
-    .slot input {
-      width: 100%;
-      border: 1px solid #d8e0e8;
-      padding: 9px 10px;
-      outline: none;
-      font-size: 15px;
-      background: white;
-      color: var(--text);
-      border-radius: 10px;
     }
 
     .slot.manana .slot-label,
@@ -218,7 +216,6 @@
       color: #b42318;
       padding: 0 10px 8px 10px;
       font-weight: bold;
-      display: none;
     }
 
     .footer {
@@ -240,19 +237,15 @@
       .calendar {
         grid-template-columns: 1fr;
       }
-
       .weekday {
         display: none;
       }
-
       .day-card {
         min-height: auto;
       }
-
       .topbar h1 {
         font-size: 22px;
       }
-
       .slot {
         grid-template-columns: 105px 1fr;
       }
@@ -264,7 +257,7 @@
     <div class="topbar">
       <button class="nav-btn" id="prevMonth">◀</button>
       <div>
-        <h1 id="monthTitle">Mes</h1>
+        <h1 id="monthTitle">Abril 2026</h1>
         <p>Calendario de siestas personal</p>
       </div>
       <button class="nav-btn" id="nextMonth">▶</button>
@@ -275,7 +268,15 @@
       <button class="action-btn" id="clearMonthBtn">Limpiar este mes</button>
     </div>
 
-    <div class="calendar" id="calendar"></div>
+    <div class="calendar" id="calendar">
+      <div class="weekday">Lunes</div>
+      <div class="weekday">Martes</div>
+      <div class="weekday">Miércoles</div>
+      <div class="weekday">Jueves</div>
+      <div class="weekday">Viernes</div>
+      <div class="weekday">Sábado</div>
+      <div class="weekday">Domingo</div>
+    </div>
 
     <div class="footer">
       Los horarios se guardan solos en el celular o la compu.
@@ -283,7 +284,30 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      onSnapshot
+    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: 'PEGA_TU_API_KEY',
+      authDomain: 'PEGA_TU_AUTH_DOMAIN',
+      projectId: 'PEGA_TU_PROJECT_ID',
+      storageBucket: 'PEGA_TU_STORAGE_BUCKET',
+      messagingSenderId: 'PEGA_TU_MESSAGING_SENDER_ID',
+      appId: 'PEGA_TU_APP_ID'
+    };
+
+    const SHARE_ID = 'agenda-compartida';
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
     const monthNames = [
       'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
@@ -301,28 +325,49 @@
     let currentDate = new Date();
     let currentYear = currentDate.getFullYear();
     let currentMonth = currentDate.getMonth();
+    let monthData = {};
+    let unsubscribeMonth = null;
 
-    function storageKey(year, month, day, suffix) {
-      return `siestas_${year}_${month + 1}_${day}_${suffix}`;
+    function monthId(year, month) {
+      return `${year}-${String(month + 1).padStart(2, '0')}`;
     }
 
-    function saveValue(year, month, day, suffix, value) {
-      localStorage.setItem(storageKey(year, month, day, suffix), value);
+    function fieldKey(day, suffix) {
+      return `${String(day).padStart(2, '0')}_${suffix}`;
     }
 
-    function loadValue(year, month, day, suffix) {
-      return localStorage.getItem(storageKey(year, month, day, suffix)) || '';
+    function loadValue(day, suffix) {
+      return monthData[fieldKey(day, suffix)] || '';
     }
 
-    function clearMonth(year, month) {
+    async function saveValue(day, suffix, value) {
+      const ref = doc(db, 'shared_calendars', SHARE_ID, 'months', monthId(currentYear, currentMonth));
+      monthData[fieldKey(day, suffix)] = value;
+      await setDoc(ref, {
+        values: {
+          ...monthData
+        },
+        updatedAt: Date.now()
+      }, { merge: true });
+    }
+
+    async function clearMonth(year, month) {
+      const ref = doc(db, 'shared_calendars', SHARE_ID, 'months', monthId(year, month));
+      const empty = {};
       const daysInMonth = new Date(year, month + 1, 0).getDate();
 
       for (let day = 1; day <= daysInMonth; day++) {
         for (const slot of slots) {
-          localStorage.removeItem(storageKey(year, month, day, slot + '_inicio'));
-          localStorage.removeItem(storageKey(year, month, day, slot + '_fin'));
+          empty[fieldKey(day, slot + '_inicio')] = '';
+          empty[fieldKey(day, slot + '_fin')] = '';
         }
       }
+
+      monthData = empty;
+      await setDoc(ref, {
+        values: empty,
+        updatedAt: Date.now()
+      }, { merge: true });
     }
 
     function createEmptyCell() {
@@ -369,7 +414,7 @@
 
         const inputStart = document.createElement('input');
         inputStart.type = 'time';
-        inputStart.value = loadValue(year, month, day, slot + '_inicio');
+        inputStart.value = loadValue(day, slot + '_inicio');
 
         const endWrap = document.createElement('div');
         endWrap.className = 'time-field';
@@ -379,7 +424,7 @@
 
         const inputEnd = document.createElement('input');
         inputEnd.type = 'time';
-        inputEnd.value = loadValue(year, month, day, slot + '_fin');
+        inputEnd.value = loadValue(day, slot + '_fin');
 
         const validation = document.createElement('div');
         validation.className = 'validation-msg';
@@ -394,13 +439,13 @@
           return !invalid;
         }
 
-        inputStart.addEventListener('input', (e) => {
-          saveValue(year, month, day, slot + '_inicio', e.target.value);
+        inputStart.addEventListener('change', async (e) => {
+          await saveValue(day, slot + '_inicio', e.target.value);
           validateTimes();
         });
 
-        inputEnd.addEventListener('input', (e) => {
-          saveValue(year, month, day, slot + '_fin', e.target.value);
+        inputEnd.addEventListener('change', async (e) => {
+          await saveValue(day, slot + '_fin', e.target.value);
           validateTimes();
         });
 
@@ -452,13 +497,23 @@
       }
     }
 
+    function watchMonth() {
+      if (unsubscribeMonth) unsubscribeMonth();
+
+      const ref = doc(db, 'shared_calendars', SHARE_ID, 'months', monthId(currentYear, currentMonth));
+      unsubscribeMonth = onSnapshot(ref, (snap) => {
+        monthData = snap.exists() ? (snap.data().values || {}) : {};
+        renderCalendar();
+      });
+    }
+
     document.getElementById('prevMonth').addEventListener('click', () => {
       currentMonth--;
       if (currentMonth < 0) {
         currentMonth = 11;
         currentYear--;
       }
-      renderCalendar();
+      watchMonth();
     });
 
     document.getElementById('nextMonth').addEventListener('click', () => {
@@ -467,30 +522,23 @@
         currentMonth = 0;
         currentYear++;
       }
-      renderCalendar();
+      watchMonth();
     });
 
     document.getElementById('todayBtn').addEventListener('click', () => {
       const now = new Date();
       currentYear = now.getFullYear();
       currentMonth = now.getMonth();
-      renderCalendar();
+      watchMonth();
     });
 
-    document.getElementById('clearMonthBtn').addEventListener('click', () => {
+    document.getElementById('clearMonthBtn').addEventListener('click', async () => {
       const ok = confirm(`¿Querés borrar todos los horarios de ${monthNames[currentMonth]} ${currentYear}?`);
       if (!ok) return;
-      clearMonth(currentYear, currentMonth);
-      renderCalendar();
+      await clearMonth(currentYear, currentMonth);
     });
 
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
-      });
-    }
-
-    renderCalendar();
+    watchMonth();
   </script>
 </body>
 </html>
