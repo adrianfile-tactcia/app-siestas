@@ -1,54 +1,385 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>App Siestas</title>
-<link rel="manifest" href="manifest.json">
-<style>
-body { font-family: Arial; background:#f1f5f9; margin:0; }
-.header { background:#1e3a8a; color:white; padding:15px; text-align:center; }
-.card { background:white; margin:10px; padding:10px; border-radius:10px; }
-input { width:100%; padding:5px; margin-top:3px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>App Siestas</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1f4e8c" />
+  <style>
+    :root {
+      --blue-dark: #214f86;
+      --blue: #5c8fd0;
+      --blue-soft: #dcecf4;
+      --line: #cdbf8b;
+      --bg: #eef3f8;
+      --card: #ffffff;
+      --text: #1d2a36;
+      --muted: #5b6b79;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    .topbar {
+      background: var(--blue-dark);
+      color: white;
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+      margin-bottom: 12px;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 28px;
+      text-align: center;
+    }
+
+    .topbar p {
+      margin: 4px 0 0;
+      opacity: .9;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .nav-btn, .action-btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .nav-btn {
+      background: rgba(255,255,255,.16);
+      color: white;
+      min-width: 48px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      background: white;
+      color: var(--text);
+      box-shadow: 0 4px 14px rgba(0,0,0,.06);
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+    }
+
+    .weekday {
+      background: var(--blue);
+      color: white;
+      text-align: center;
+      padding: 10px 6px;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .day-card {
+      background: var(--card);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0,0,0,.06);
+      min-height: 290px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .day-card.empty {
+      background: transparent;
+      box-shadow: none;
+      min-height: 0;
+    }
+
+    .day-head {
+      background: var(--blue-soft);
+      color: #15385f;
+      text-align: center;
+      padding: 8px;
+      font-weight: bold;
+      border-bottom: 1px solid #c7dbe7;
+    }
+
+    .day-head.today {
+      background: var(--blue);
+      color: white;
+    }
+
+    .rows {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    .slot {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      border-bottom: 1px solid var(--line);
+      min-height: 38px;
+    }
+
+    .slot:last-child {
+      border-bottom: 0;
+    }
+
+    .slot-label {
+      padding: 9px 8px;
+      font-weight: bold;
+      border-right: 1px solid var(--line);
+      background: #fff;
+      font-size: 15px;
+    }
+
+    .slot input {
+      width: 100%;
+      border: 0;
+      padding: 9px 10px;
+      outline: none;
+      font-size: 15px;
+      background: white;
+      color: var(--text);
+    }
+
+    .footer {
+      margin-top: 14px;
+      background: white;
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.06);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .install-tip {
+      margin-top: 8px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 860px) {
+      .calendar {
+        grid-template-columns: 1fr;
+      }
+      .weekday {
+        display: none;
+      }
+      .day-card {
+        min-height: auto;
+      }
+      .topbar h1 {
+        font-size: 22px;
+      }
+      .slot {
+        grid-template-columns: 98px 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
+  <div class="app">
+    <div class="topbar">
+      <button class="nav-btn" id="prevMonth">◀</button>
+      <div>
+        <h1 id="monthTitle">Abril 2026</h1>
+        <p>Calendario de siestas personal</p>
+      </div>
+      <button class="nav-btn" id="nextMonth">▶</button>
+    </div>
 
-<div class="header">
-<h2>Abril 2026</h2>
-</div>
+    <div class="toolbar">
+      <button class="action-btn" id="todayBtn">Ir al mes actual</button>
+      <button class="action-btn" id="clearMonthBtn">Limpiar este mes</button>
+    </div>
 
-<div id="app"></div>
+    <div class="calendar" id="calendar">
+      <div class="weekday">Lunes</div>
+      <div class="weekday">Martes</div>
+      <div class="weekday">Miércoles</div>
+      <div class="weekday">Jueves</div>
+      <div class="weekday">Viernes</div>
+      <div class="weekday">Sábado</div>
+      <div class="weekday">Domingo</div>
+    </div>
 
-<script>
-const days = [13,14,15,16,17,18,19];
+    <div class="footer">
+      Los horarios se guardan solos en el celular o la compu.
+      <div class="install-tip">En Android: menú del navegador → Instalar app. En iPhone: Compartir → Añadir a pantalla de inicio.</div>
+    </div>
+  </div>
 
-function save(key, value){
- localStorage.setItem(key, value);
-}
+  <script>
+    const monthNames = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
 
-function load(key){
- return localStorage.getItem(key) || "";
-}
+    const slots = ['Mañana', 'Siesta 2', 'Siesta 3', 'Siesta 4', 'Noche'];
+    const calendarEl = document.getElementById('calendar');
+    const monthTitleEl = document.getElementById('monthTitle');
 
-const app = document.getElementById("app");
+    const today = new Date();
+    let currentYear = today.getFullYear();
+    let currentMonth = today.getMonth();
 
-days.forEach(day=>{
- let div = document.createElement("div");
- div.className = "card";
+    function storageKey(year, month, day, slot) {
+      return `siestas_${year}_${month + 1}_${day}_${slot}`;
+    }
 
- div.innerHTML = `
- <h3>Día ${day}</h3>
- Mañana <input value="${load('m_'+day)}" onchange="save('m_${day}', this.value)">
- Siesta 2 <input value="${load('s2_'+day)}" onchange="save('s2_${day}', this.value)">
- Siesta 3 <input value="${load('s3_'+day)}" onchange="save('s3_${day}', this.value)">
- Siesta 4 <input value="${load('s4_'+day)}" onchange="save('s4_${day}', this.value)">
- Noche <input value="${load('n_'+day)}" onchange="save('n_${day}', this.value)">
- `;
+    function saveValue(year, month, day, slot, value) {
+      localStorage.setItem(storageKey(year, month, day, slot), value);
+    }
 
- app.appendChild(div);
-});
-</script>
+    function loadValue(year, month, day, slot) {
+      return localStorage.getItem(storageKey(year, month, day, slot)) || '';
+    }
 
+    function clearMonth(year, month) {
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      for (let day = 1; day <= daysInMonth; day++) {
+        for (const slot of slots) {
+          localStorage.removeItem(storageKey(year, month, day, slot));
+        }
+      }
+    }
+
+    function createEmptyCell() {
+      const empty = document.createElement('div');
+      empty.className = 'day-card empty';
+      return empty;
+    }
+
+    function createDayCard(year, month, day) {
+      const isToday =
+        day === today.getDate() &&
+        month === today.getMonth() &&
+        year === today.getFullYear();
+
+      const card = document.createElement('div');
+      card.className = 'day-card';
+
+      const head = document.createElement('div');
+      head.className = 'day-head' + (isToday ? ' today' : '');
+      head.textContent = day;
+      card.appendChild(head);
+
+      const rows = document.createElement('div');
+      rows.className = 'rows';
+
+      slots.forEach((slot) => {
+        const row = document.createElement('div');
+        row.className = 'slot';
+
+        const label = document.createElement('div');
+        label.className = 'slot-label';
+        label.textContent = slot;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'Ej: 10:20 - 10:55';
+        input.value = loadValue(year, month, day, slot);
+        input.addEventListener('input', (e) => {
+          saveValue(year, month, day, slot, e.target.value);
+        });
+
+        row.appendChild(label);
+        row.appendChild(input);
+        rows.appendChild(row);
+      });
+
+      card.appendChild(rows);
+      return card;
+    }
+
+    function renderCalendar() {
+      calendarEl.innerHTML = `
+        <div class="weekday">Lunes</div>
+        <div class="weekday">Martes</div>
+        <div class="weekday">Miércoles</div>
+        <div class="weekday">Jueves</div>
+        <div class="weekday">Viernes</div>
+        <div class="weekday">Sábado</div>
+        <div class="weekday">Domingo</div>
+      `;
+
+      monthTitleEl.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+      const firstDay = new Date(currentYear, currentMonth, 1);
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      let startIndex = firstDay.getDay();
+      startIndex = startIndex === 0 ? 6 : startIndex - 1;
+
+      for (let i = 0; i < startIndex; i++) {
+        calendarEl.appendChild(createEmptyCell());
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        calendarEl.appendChild(createDayCard(currentYear, currentMonth, day));
+      }
+    }
+
+    document.getElementById('prevMonth').addEventListener('click', () => {
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+      renderCalendar();
+    });
+
+    document.getElementById('nextMonth').addEventListener('click', () => {
+      currentMonth++;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+      renderCalendar();
+    });
+
+    document.getElementById('todayBtn').addEventListener('click', () => {
+      currentYear = today.getFullYear();
+      currentMonth = today.getMonth();
+      renderCalendar();
+    });
+
+    document.getElementById('clearMonthBtn').addEventListener('click', () => {
+      const ok = confirm(`¿Querés borrar todos los horarios de ${monthNames[currentMonth]} ${currentYear}?`);
+      if (!ok) return;
+      clearMonth(currentYear, currentMonth);
+      renderCalendar();
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    renderCalendar();
+  </script>
 </body>
 </html>
