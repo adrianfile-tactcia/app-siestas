@@ -297,16 +297,29 @@
         label.className = 'slot-label';
         label.textContent = slot;
 
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = 'Ej: 10:20 - 10:55';
-        input.value = loadValue(year, month, day, slot);
-        input.addEventListener('input', (e) => {
-          saveValue(year, month, day, slot, e.target.value);
+        const container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.gap = '6px';
+
+        const inputStart = document.createElement('input');
+        inputStart.type = 'time';
+        inputStart.value = loadValue(year, month, day, slot + '_inicio');
+        inputStart.addEventListener('input', (e) => {
+          saveValue(year, month, day, slot + '_inicio', e.target.value);
         });
 
+        const inputEnd = document.createElement('input');
+        inputEnd.type = 'time';
+        inputEnd.value = loadValue(year, month, day, slot + '_fin');
+        inputEnd.addEventListener('input', (e) => {
+          saveValue(year, month, day, slot + '_fin', e.target.value);
+        });
+
+        container.appendChild(inputStart);
+        container.appendChild(inputEnd);
+
         row.appendChild(label);
-        row.appendChild(input);
+        row.appendChild(container);
         rows.appendChild(row);
       });
 
