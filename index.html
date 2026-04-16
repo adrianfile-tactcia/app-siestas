@@ -6,165 +6,567 @@
   <title>App Siestas</title>
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#214f86" />
-
   <style>
+    :root {
+      --blue-dark: #214f86;
+      --blue: #5c8fd0;
+      --blue-soft: #dcecf4;
+      --line: #cdbf8b;
+      --bg: #eef3f8;
+      --card: #ffffff;
+      --text: #1d2a36;
+      --muted: #5b6b79;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      font-family: Arial;
-      background: #eef3f8;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 14px;
     }
 
     .topbar {
-      background: #214f86;
+      background: var(--blue-dark);
       color: white;
-      padding: 10px;
+      border-radius: 14px;
+      padding: 14px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+      margin-bottom: 12px;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 28px;
+      text-align: center;
+    }
+
+    .topbar p {
+      margin: 4px 0 0;
+      opacity: .9;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .nav-btn, .action-btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .nav-btn {
+      background: rgba(255,255,255,.16);
+      color: white;
+      min-width: 48px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      background: white;
+      color: var(--text);
+      box-shadow: 0 4px 14px rgba(0,0,0,.06);
     }
 
     .calendar {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-      padding: 6px;
+      gap: 10px;
     }
 
-    .day {
-      background: white;
-      border-radius: 8px;
-      padding: 4px;
-      min-height: 110px;
-      font-size: 12px;
+    .weekday {
+      background: var(--blue);
+      color: white;
+      text-align: center;
+      padding: 10px 6px;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 14px;
     }
 
-    .today {
-      border: 2px solid #214f86;
+    .day-card {
+      scroll-margin-top: 20px;
+      background: var(--card);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0,0,0,.06);
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .day-card.today-card {
+      outline: 3px solid #214f86;
+      box-shadow: 0 0 0 4px rgba(33,79,134,0.12), 0 6px 18px rgba(0,0,0,.06);
+    }
+
+    .day-card.empty {
+      background: transparent;
+      box-shadow: none;
+      min-height: 0;
+    }
+
+    .day-head {
+      background: var(--blue-soft);
+      color: #15385f;
+      text-align: center;
+      padding: 8px;
+      font-weight: bold;
+      border-bottom: 1px solid #c7dbe7;
+      font-size: 16px;
+    }
+
+    .day-head.today {
+      background: var(--blue);
+      color: white;
+    }
+
+    .rows {
+      display: grid;
+      grid-template-columns: 1fr;
     }
 
     .slot {
-      display: flex;
-      flex-direction: column;
-      margin-top: 3px;
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      border-bottom: 1px solid var(--line);
+      min-height: 38px;
     }
 
-    input {
-      font-size: 12px;
-      margin-top: 2px;
+    .slot:last-child {
+      border-bottom: 0;
+    }
+
+    .slot-label {
+      padding: 9px 8px;
+      font-weight: bold;
+      border-right: 1px solid var(--line);
+      background: #fff;
+      font-size: 15px;
+    }
+
+    .time-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 6px 8px;
+      align-items: end;
+    }
+
+    .time-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .time-field small {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: bold;
+      padding-left: 2px;
+    }
+
+    .slot input {
+      width: 100%;
+      border: 1px solid #d8e0e8;
+      padding: 9px 10px;
+      outline: none;
+      font-size: 15px;
+      background: white;
+      color: var(--text);
+      border-radius: 10px;
+    }
+
+    .slot.manana .slot-label,
+    .slot.manana .time-group {
+      background: #fff8e8;
+    }
+
+    .slot.siesta .slot-label,
+    .slot.siesta .time-group {
+      background: #eef8ee;
+    }
+
+    .slot.noche .slot-label,
+    .slot.noche .time-group {
+      background: #eef2fb;
+    }
+
+    .slot.invalid .time-group {
+      background: #fff0f0;
+    }
+
+    .slot.invalid input {
+      border-color: #d66;
+    }
+
+    .validation-msg {
+      grid-column: 1 / -1;
+      font-size: 11px;
+      color: #b42318;
+      padding: 0 10px 8px 10px;
+      font-weight: bold;
+      display: none;
+    }
+
+    .footer {
+      margin-top: 14px;
+      background: white;
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.06);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .install-tip {
+      margin-top: 8px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 860px) {
+      .calendar {
+        grid-template-columns: 1fr;
+      }
+
+      .weekday {
+        display: none;
+      }
+
+      .day-card {
+        min-height: auto;
+      }
+
+      .topbar h1 {
+        font-size: 22px;
+      }
+
+      .slot {
+        grid-template-columns: 105px 1fr;
+      }
     }
   </style>
 </head>
-
 <body>
+  <div class="app">
+    <div class="topbar">
+      <button class="nav-btn" id="prevMonth">◀</button>
+      <div>
+        <h1 id="monthTitle">Mes</h1>
+        <p>Agenda compartida de siestas</p>
+      </div>
+      <button class="nav-btn" id="nextMonth">▶</button>
+    </div>
 
-<div class="topbar">
-  <button onclick="prevMonth()">◀</button>
-  <div id="title">Mes</div>
-  <button onclick="nextMonth()">▶</button>
-</div>
+    <div class="toolbar">
+      <button class="action-btn" id="todayBtn">Ir al mes actual</button>
+      <button class="action-btn" id="clearMonthBtn">Limpiar este mes</button>
+    </div>
 
-<div class="calendar" id="calendar"></div>
+    <div class="calendar" id="calendar"></div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    <div class="footer">
+      Los horarios se guardan y se comparten entre dispositivos.
+      <div class="install-tip">En Android: menú del navegador → Instalar app. En iPhone: Compartir → Añadir a pantalla de inicio.</div>
+    </div>
+  </div>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDDrGbgL17i2KX5W3e0iNilTzWUrIsvgHA",
-  authDomain: "app-web-ffea0.firebaseapp.com",
-  projectId: "app-web-ffea0",
-  storageBucket: "app-web-ffea0.firebasestorage.app",
-  messagingSenderId: "1021596773214",
-  appId: "1:1021596773214:web:670dab0a531461775abd6f"
-};
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    const firebaseConfig = {
+      apiKey: "AIzaSyDDrGbgL17i2KX5W3e0iNilTzWUrIsvgHA",
+      authDomain: "app-web-ffea0.firebaseapp.com",
+      projectId: "app-web-ffea0",
+      storageBucket: "app-web-ffea0.firebasestorage.app",
+      messagingSenderId: "1021596773214",
+      appId: "1:1021596773214:web:670dab0a531461775abd6f"
+    };
 
-const SHARE_ID = "agenda-compartida";
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const SHARE_ID = 'agenda-compartida';
 
-let currentDate = new Date();
-let currentMonth = currentDate.getMonth();
-let currentYear = currentDate.getFullYear();
-let data = {};
+    const monthNames = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
 
-const slots = ["mañana", "siesta2", "siesta3", "siesta4", "noche"];
+    const weekdayNames = [
+      'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'
+    ];
 
-function key(d, s) {
-  return `${d}_${s}`;
-}
+    const slots = ['Mañana', 'Siesta 2', 'Siesta 3', 'Siesta 4', 'Noche'];
 
-async function save(d, s, value) {
-  const ref = doc(db, "shared_calendars", SHARE_ID, "months", `${currentYear}-${currentMonth+1}`);
-  data[key(d,s)] = value;
+    const calendarEl = document.getElementById('calendar');
+    const monthTitleEl = document.getElementById('monthTitle');
 
-  await setDoc(ref, { values: data }, { merge: true });
-}
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
+    let monthData = {};
+    let unsubscribeMonth = null;
 
-function load(d, s) {
-  return data[key(d,s)] || "";
-}
-
-function render() {
-  const cal = document.getElementById("calendar");
-  cal.innerHTML = "";
-
-  document.getElementById("title").innerText =
-    currentYear + " / " + (currentMonth+1);
-
-  const first = new Date(currentYear, currentMonth, 1).getDay();
-  const days = new Date(currentYear, currentMonth+1, 0).getDate();
-
-  for (let i=0;i<first;i++) cal.innerHTML += "<div></div>";
-
-  for (let d=1; d<=days; d++) {
-    const div = document.createElement("div");
-    div.className = "day";
-
-    if (
-      d === new Date().getDate() &&
-      currentMonth === new Date().getMonth()
-    ) {
-      div.classList.add("today");
-      setTimeout(()=>div.scrollIntoView({behavior:"smooth"}),200);
+    function monthId(year, month) {
+      return `${year}-${String(month + 1).padStart(2, '0')}`;
     }
 
-    div.innerHTML = "<b>"+d+"</b>";
+    function fieldKey(day, suffix) {
+      return `${String(day).padStart(2, '0')}_${suffix}`;
+    }
 
-    slots.forEach(s=>{
-      const inp = document.createElement("input");
-      inp.value = load(d,s);
-      inp.onchange = e=> save(d,s,e.target.value);
-      div.appendChild(inp);
+    function loadValue(day, suffix) {
+      const key = fieldKey(day, suffix);
+      return key in monthData ? monthData[key] : '';
+    }
+
+    async function saveValue(day, suffix, value) {
+      const ref = doc(db, 'shared_calendars', SHARE_ID, 'months', monthId(currentYear, currentMonth));
+      const nextValues = {
+        ...monthData,
+        [fieldKey(day, suffix)]: value
+      };
+      monthData = nextValues;
+
+      await setDoc(ref, {
+        values: nextValues,
+        updatedAt: Date.now()
+      }, { merge: true });
+    }
+
+    async function clearMonth(year, month) {
+      const ref = doc(db, 'shared_calendars', SHARE_ID, 'months', monthId(year, month));
+      const empty = {};
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        for (const slot of slots) {
+          empty[fieldKey(day, slot + '_inicio')] = '';
+          empty[fieldKey(day, slot + '_fin')] = '';
+        }
+      }
+
+      monthData = empty;
+
+      await setDoc(ref, {
+        values: empty,
+        updatedAt: Date.now()
+      }, { merge: true });
+    }
+
+    function createEmptyCell() {
+      const empty = document.createElement('div');
+      empty.className = 'day-card empty';
+      return empty;
+    }
+
+    function createDayCard(year, month, day) {
+      const today = new Date();
+      const isToday =
+        day === today.getDate() &&
+        month === today.getMonth() &&
+        year === today.getFullYear();
+
+      const card = document.createElement('div');
+      card.className = 'day-card' + (isToday ? ' today-card' : '');
+      card.id = `day-${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+      const head = document.createElement('div');
+      head.className = 'day-head' + (isToday ? ' today' : '');
+      head.textContent = day;
+      card.appendChild(head);
+
+      const rows = document.createElement('div');
+      rows.className = 'rows';
+
+      slots.forEach((slot) => {
+        const row = document.createElement('div');
+        const slotClass = slot === 'Mañana' ? 'manana' : (slot === 'Noche' ? 'noche' : 'siesta');
+        row.className = 'slot ' + slotClass;
+
+        const label = document.createElement('div');
+        label.className = 'slot-label';
+        label.textContent = slot;
+
+        const container = document.createElement('div');
+        container.className = 'time-group';
+
+        const startWrap = document.createElement('div');
+        startWrap.className = 'time-field';
+
+        const startLabel = document.createElement('small');
+        startLabel.textContent = 'Inicio';
+
+        const inputStart = document.createElement('input');
+        inputStart.type = 'time';
+        inputStart.value = loadValue(day, slot + '_inicio');
+
+        const endWrap = document.createElement('div');
+        endWrap.className = 'time-field';
+
+        const endLabel = document.createElement('small');
+        endLabel.textContent = 'Fin';
+
+        const inputEnd = document.createElement('input');
+        inputEnd.type = 'time';
+        inputEnd.value = loadValue(day, slot + '_fin');
+
+        const validation = document.createElement('div');
+        validation.className = 'validation-msg';
+        validation.textContent = 'La hora de fin no puede ser anterior a la de inicio';
+
+        function validateTimes() {
+          const start = inputStart.value;
+          const end = inputEnd.value;
+          const invalid = start && end && end < start;
+          row.classList.toggle('invalid', invalid);
+          validation.style.display = invalid ? 'block' : 'none';
+          return !invalid;
+        }
+
+        inputStart.addEventListener('change', async (e) => {
+          await saveValue(day, slot + '_inicio', e.target.value);
+          validateTimes();
+        });
+
+        inputEnd.addEventListener('change', async (e) => {
+          await saveValue(day, slot + '_fin', e.target.value);
+          validateTimes();
+        });
+
+        startWrap.appendChild(startLabel);
+        startWrap.appendChild(inputStart);
+        endWrap.appendChild(endLabel);
+        endWrap.appendChild(inputEnd);
+
+        container.appendChild(startWrap);
+        container.appendChild(endWrap);
+
+        row.appendChild(label);
+        row.appendChild(container);
+        row.appendChild(validation);
+
+        rows.appendChild(row);
+        validateTimes();
+      });
+
+      card.appendChild(rows);
+      return card;
+    }
+
+    function renderCalendar() {
+      calendarEl.innerHTML = '';
+
+      weekdayNames.forEach((dayName) => {
+        const w = document.createElement('div');
+        w.className = 'weekday';
+        w.textContent = dayName;
+        calendarEl.appendChild(w);
+      });
+
+      monthTitleEl.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+      const firstDay = new Date(currentYear, currentMonth, 1);
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      let startIndex = firstDay.getDay();
+      startIndex = startIndex === 0 ? 6 : startIndex - 1;
+
+      for (let i = 0; i < startIndex; i++) {
+        calendarEl.appendChild(createEmptyCell());
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        calendarEl.appendChild(createDayCard(currentYear, currentMonth, day));
+      }
+
+      const now = new Date();
+      const isCurrentDisplayedMonth = currentYear === now.getFullYear() && currentMonth === now.getMonth();
+      if (isCurrentDisplayedMonth) {
+        const todayId = `day-${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const todayCard = document.getElementById(todayId);
+        if (todayCard) {
+          requestAnimationFrame(() => {
+            todayCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        }
+      }
+    }
+
+    function watchMonth() {
+      if (unsubscribeMonth) unsubscribeMonth();
+
+      const ref = doc(db, 'shared_calendars', SHARE_ID, 'months', monthId(currentYear, currentMonth));
+
+      unsubscribeMonth = onSnapshot(
+        ref,
+        (snap) => {
+          if (snap.exists()) {
+            const data = snap.data();
+            monthData = data && data.values ? data.values : {};
+          } else {
+            monthData = {};
+          }
+          renderCalendar();
+        },
+        (error) => {
+          console.error('Error leyendo Firebase:', error);
+          monthData = {};
+          renderCalendar();
+        }
+      );
+    }
+
+    document.getElementById('prevMonth').addEventListener('click', () => {
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+      watchMonth();
     });
 
-    cal.appendChild(div);
-  }
-}
+    document.getElementById('nextMonth').addEventListener('click', () => {
+      currentMonth++;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+      watchMonth();
+    });
 
-function watch() {
-  const ref = doc(db, "shared_calendars", SHARE_ID, "months", `${currentYear}-${currentMonth+1}`);
+    document.getElementById('todayBtn').addEventListener('click', () => {
+      const now = new Date();
+      currentYear = now.getFullYear();
+      currentMonth = now.getMonth();
+      watchMonth();
+    });
 
-  onSnapshot(ref, snap=>{
-    data = snap.exists() ? snap.data().values || {} : {};
-    render();
-  });
-}
+    document.getElementById('clearMonthBtn').addEventListener('click', async () => {
+      const ok = confirm(`¿Querés borrar todos los horarios de ${monthNames[currentMonth]} ${currentYear}?`);
+      if (!ok) return;
+      await clearMonth(currentYear, currentMonth);
+    });
 
-window.prevMonth = function() {
-  currentMonth--;
-  if (currentMonth<0){currentMonth=11;currentYear--;}
-  watch();
-}
-
-window.nextMonth = function() {
-  currentMonth++;
-  if (currentMonth>11){currentMonth=0;currentYear++;}
-  watch();
-}
-
-watch();
-</script>
-
+    watchMonth();
+  </script>
 </body>
 </html>
