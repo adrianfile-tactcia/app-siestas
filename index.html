@@ -342,9 +342,10 @@
       return `${String(day).padStart(2, '0')}_${suffix}`;
     }
 
-    function loadValue(day, suffix) {
-      return monthData[fieldKey(day, suffix)] || '';
-    }
+  function loadValue(day, suffix) {
+  const key = fieldKey(day, suffix);
+  return key in monthData ? monthData[key] : '';
+}
 
     async function saveValue(day, suffix, value) {
       const ref = doc(db, 'shared_calendars', SHARE_ID, 'months', monthId(currentYear, currentMonth));
@@ -516,15 +517,29 @@
       }
     }
 
-    function watchMonth() {
-      if (unsubscribeMonth) unsubscribeMonth();
+  function watchMonth() {
+  if (unsubscribeMonth) unsubscribeMonth();
 
-      const ref = doc(db, 'shared_calendars', SHARE_ID, 'months', monthId(currentYear, currentMonth));
-      unsubscribeMonth = onSnapshot(ref, (snap) => {
-        monthData = snap.exists() ? (snap.data().values || {}) : {};
-        renderCalendar();
-      });
+  const ref = doc(db, 'shared_calendars', SHARE_ID, 'months', monthId(currentYear, currentMonth));
+
+  unsubscribeMonth = onSnapshot(
+    ref,
+    (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        monthData = data && data.values ? data.values : {};
+      } else {
+        monthData = {};
+      }
+      renderCalendar();
+    },
+    (error) => {
+      console.error('Error leyendo Firebase:', error);
+      monthData = {};
+      renderCalendar();
     }
+  );
+}
 
     document.getElementById('prevMonth').addEventListener('click', () => {
       currentMonth--;
