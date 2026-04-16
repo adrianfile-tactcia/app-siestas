@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App Siestas</title>
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#214f86" />
+  <meta name="theme-color" content="#1f4e8c" />
   <style>
     :root {
       --blue-dark: #214f86;
@@ -19,7 +19,6 @@
     }
 
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
@@ -28,7 +27,7 @@
     }
 
     .app {
-      max-width: 1400px;
+      max-width: 900px;
       margin: 0 auto;
       padding: 14px;
     }
@@ -103,13 +102,19 @@
     }
 
     .day-card {
+      scroll-margin-top: 20px;
       background: var(--card);
       border-radius: 16px;
       overflow: hidden;
       box-shadow: 0 6px 18px rgba(0,0,0,.06);
-      min-height: 280px;
+      min-height: 290px;
       display: flex;
       flex-direction: column;
+    }
+
+    .day-card.today-card {
+      outline: 3px solid #214f86;
+      box-shadow: 0 0 0 4px rgba(33,79,134,0.12), 0 6px 18px rgba(0,0,0,.06);
     }
 
     .day-card.empty {
@@ -125,7 +130,6 @@
       padding: 8px;
       font-weight: bold;
       border-bottom: 1px solid #c7dbe7;
-      font-size: 16px;
     }
 
     .day-head.today {
@@ -157,6 +161,17 @@
       font-size: 15px;
     }
 
+    .slot input {
+      width: 100%;
+      border: 1px solid #d8e0e8;
+      padding: 9px 10px;
+      outline: none;
+      font-size: 15px;
+      background: white;
+      color: var(--text);
+      border-radius: 10px;
+    }
+
     .time-group {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -176,17 +191,6 @@
       color: var(--muted);
       font-weight: bold;
       padding-left: 2px;
-    }
-
-    .slot input {
-      width: 100%;
-      border: 1px solid #d8e0e8;
-      padding: 9px 10px;
-      outline: none;
-      font-size: 15px;
-      background: white;
-      color: var(--text);
-      border-radius: 10px;
     }
 
     .slot.manana .slot-label,
@@ -218,7 +222,6 @@
       color: #b42318;
       padding: 0 10px 8px 10px;
       font-weight: bold;
-      display: none;
     }
 
     .footer {
@@ -240,19 +243,15 @@
       .calendar {
         grid-template-columns: 1fr;
       }
-
       .weekday {
         display: none;
       }
-
       .day-card {
         min-height: auto;
       }
-
       .topbar h1 {
         font-size: 22px;
       }
-
       .slot {
         grid-template-columns: 105px 1fr;
       }
@@ -264,8 +263,8 @@
     <div class="topbar">
       <button class="nav-btn" id="prevMonth">◀</button>
       <div>
-        <h1 id="monthTitle">Mes</h1>
-        <p>Agenda compartida de siestas</p>
+        <h1 id="monthTitle">Abril 2026</h1>
+        <p>Calendario de siestas personal</p>
       </div>
       <button class="nav-btn" id="nextMonth">▶</button>
     </div>
@@ -275,30 +274,45 @@
       <button class="action-btn" id="clearMonthBtn">Limpiar este mes</button>
     </div>
 
-    <div class="calendar" id="calendar"></div>
+    <div class="calendar" id="calendar">
+      <div class="weekday">Lunes</div>
+      <div class="weekday">Martes</div>
+      <div class="weekday">Miércoles</div>
+      <div class="weekday">Jueves</div>
+      <div class="weekday">Viernes</div>
+      <div class="weekday">Sábado</div>
+      <div class="weekday">Domingo</div>
+    </div>
 
     <div class="footer">
-      Los horarios se guardan y se comparten entre dispositivos.
+      Los horarios se guardan solos en el celular o la compu.
       <div class="install-tip">En Android: menú del navegador → Instalar app. En iPhone: Compartir → Añadir a pantalla de inicio.</div>
     </div>
   </div>
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-    import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      onSnapshot
+    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
     const firebaseConfig = {
-      apiKey: "AIzaSyDDrGbgL17i2KX5W3e0iNilTzWUrIsvgHA",
-      authDomain: "app-web-ffea0.firebaseapp.com",
-      projectId: "app-web-ffea0",
-      storageBucket: "app-web-ffea0.firebasestorage.app",
-      messagingSenderId: "1021596773214",
-      appId: "1:1021596773214:web:670dab0a531461775abd6f"
+      apiKey: 'PEGA_TU_API_KEY',
+      authDomain: 'PEGA_TU_AUTH_DOMAIN',
+      projectId: 'PEGA_TU_PROJECT_ID',
+      storageBucket: 'PEGA_TU_STORAGE_BUCKET',
+      messagingSenderId: 'PEGA_TU_MESSAGING_SENDER_ID',
+      appId: 'PEGA_TU_APP_ID'
     };
+
+    const SHARE_ID = 'agenda-compartida';
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const SHARE_ID = 'agenda-compartida';
 
     const monthNames = [
       'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -314,8 +328,9 @@
     const calendarEl = document.getElementById('calendar');
     const monthTitleEl = document.getElementById('monthTitle');
 
-    let currentYear = new Date().getFullYear();
-    let currentMonth = new Date().getMonth();
+    let currentDate = new Date();
+    let currentYear = currentDate.getFullYear();
+    let currentMonth = currentDate.getMonth();
     let monthData = {};
     let unsubscribeMonth = null;
 
@@ -333,14 +348,11 @@
 
     async function saveValue(day, suffix, value) {
       const ref = doc(db, 'shared_calendars', SHARE_ID, 'months', monthId(currentYear, currentMonth));
-      const nextValues = {
-        ...monthData,
-        [fieldKey(day, suffix)]: value
-      };
-      monthData = nextValues;
-
+      monthData[fieldKey(day, suffix)] = value;
       await setDoc(ref, {
-        values: nextValues,
+        values: {
+          ...monthData
+        },
         updatedAt: Date.now()
       }, { merge: true });
     }
@@ -358,7 +370,6 @@
       }
 
       monthData = empty;
-
       await setDoc(ref, {
         values: empty,
         updatedAt: Date.now()
@@ -379,7 +390,8 @@
         year === today.getFullYear();
 
       const card = document.createElement('div');
-      card.className = 'day-card';
+      card.className = 'day-card' + (isToday ? ' today-card' : '');
+      card.id = `day-${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
       const head = document.createElement('div');
       head.className = 'day-head' + (isToday ? ' today' : '');
@@ -457,6 +469,7 @@
         row.appendChild(validation);
 
         rows.appendChild(row);
+
         validateTimes();
       });
 
@@ -489,18 +502,26 @@
       for (let day = 1; day <= daysInMonth; day++) {
         calendarEl.appendChild(createDayCard(currentYear, currentMonth, day));
       }
+
+      const now = new Date();
+      const isCurrentDisplayedMonth = currentYear === now.getFullYear() && currentMonth === now.getMonth();
+      if (isCurrentDisplayedMonth) {
+        const todayId = `day-${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const todayCard = document.getElementById(todayId);
+        if (todayCard) {
+          requestAnimationFrame(() => {
+            todayCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        }
+      }
     }
 
     function watchMonth() {
       if (unsubscribeMonth) unsubscribeMonth();
 
       const ref = doc(db, 'shared_calendars', SHARE_ID, 'months', monthId(currentYear, currentMonth));
-
       unsubscribeMonth = onSnapshot(ref, (snap) => {
         monthData = snap.exists() ? (snap.data().values || {}) : {};
-        renderCalendar();
-      }, () => {
-        monthData = {};
         renderCalendar();
       });
     }
